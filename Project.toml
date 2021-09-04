@@ -1,0 +1,4 @@
+name = "Math"
+uuid = "947c0af8-e4e9-41c7-a371-31436aa6be85"
+authors = ["Vasily Ilin <vasilin97@gmail.com>"]
+version = "0.1.0"
