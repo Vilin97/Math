@@ -1,5 +1,6 @@
 # trying to partition integers in infinitely many orbits of widths n^2, n = 2,3,4,...
 using ProgressLogging, LaTeXStrings
+using Plots
 
 "return the last n to fit in x"
 function last_n(x)
@@ -33,9 +34,9 @@ function place_n!(x, n)
     end
 end
 
-"place all orbits"
-function place_ns!(x)
-    @progress "placing ns" for n in 2:last_n(x)
+"place N orbits"
+function place_ns!(x, N = last_n(x))
+    @progress "placing ns" for n in 2:N
         place_n!(x, n)
     end
 end
@@ -44,13 +45,13 @@ end
 excess_density(x, n) = count(i -> i == n, x)/length(x) - 1/width(n)
 
 "returns an array of excess densities"
-function excess_densities(x)
-    counts = zeros(Int, last_n(x))
+function excess_densities(x, N = last_n(x))
+    counts = zeros(Int, N)
     for n in x
         counts[n] += 1
     end
     res=[count/length(x) - 1/width(n) for (n,count) in enumerate(counts)]
-    res[1] += 1.0
+    res[1] = counts[1]/length(x)
     res
 end
 
@@ -74,7 +75,19 @@ savefig(plt, "excess_densities_plot")
 
 # exploring edge cases
 power = 1.7
-global width(n) = floor(Int,2*n^power)
-x = ones(Int, 10^7)
+global width(n) = ceil(Int,1.05429 * n^power)
+x = ones(Int, 10^8)
 place_ns!(x)
-@show sum(eds[2:end])
+
+# trying to break greedy by choosing widths as small as possible while keeping the sum of reciprocals below 1
+greedy_widths = ones(Int, 7)
+greedy_widths[2] = 2
+for index in 3:length(greedy_widths)
+    greedy_widths[index] = greedy_widths[index-1]^2 - greedy_widths[index-1] + 1
+end
+
+global width(n) = ceil(Int,1.01*greedy_widths[n])
+x = ones(Int, 10^7)
+place_ns!(x, 7)
+@show x[1:20]
+eds = excess_densities(x, 7)
