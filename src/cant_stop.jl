@@ -33,26 +33,26 @@ function sim(vals, tops)
             end
         end
         if !can_move
-            return 0, 0
+            return 0
         end
     end
-    finished_val_ind = findmin(tops-counts)[2]
-    return 1, finished_val_ind
+    # finished_val_ind = findmin(tops-counts)[2]
+    return 1
 end
 
 
 vals = [6,7,8]
 tops = [10,12,10]
 
-N = 10^6
+N = 10^7
 count = 0
 val_counts = [0,0,0]
 for i in 1:N
     simulation = sim(vals, tops)
-    count += simulation[1]
-    if simulation[2] > 0
-        val_counts[simulation[2]] += 1
-    end
+    count += simulation
+    # if simulation[2] > 0
+        # val_counts[simulation[2]] += 1
+    # end
 end
-prob = count/N
-val_probs = val_counts/N
+prob = count/N # 0.25
+# val_probs = val_counts/N
