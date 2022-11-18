@@ -81,9 +81,6 @@ end
 # experimenting with all particles attracting to the origin
 function attractive_origin()
   d = 2
-  # ρ₀ = MvNormal(I(d))
-  # n = 10
-  # xs = rand(ρ₀, n)
   Δts = 0.01*ones(50)
   b(x, t) = -x
   D(x, t) = 0.1
@@ -100,34 +97,37 @@ animation = animate_2d(trajectories)
 # reproducing first numerical experiment: repelling particles attracted to a moving trap
 function repel_attract()
   d_bar = 2
-  N = 50
+  N = 3
   d = d_bar*N
   a = 2.
   w = 1.
-  β(t) = a*[cos(π*w*t), sin(π*w*t)]'
-
-
-
-
+  α = 0.5
+  num_samples = 2
+  Δts = 0.01*ones(10)
+  s = Chain(
+    Dense(d => 50, relu),
+    Dense(50 => 50, relu),
+    Dense(50 => 50, relu),
+    Dense(50 => d))
+    
+  # define drift vector field b and diffusion matrix D
+  β(t) = a*[cos(π*w*t), sin(π*w*t)]
+  function b(x,t)
+    x_ = reshape(x, d_bar, N)
+    attract = β(t) .- x_
+    repel = α * (mean(x_, dims = 2) .- x_)
+    reshape(attract - repel, d)
+  end
+  D(x, t) = 0.25
+  
+  # draw samples
+  ρ₀ = MvNormal(β(0), 0.25*I(d_bar))
+  xs = hcat([reshape(rand(ρ₀, N), d) for _ in 1:num_samples]...)
+  sbtm(xs, Δts, b, D, s)
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+trajectories = repel_attract()
+# TODO animate the result
+# TODO fix runtime dispatch and other errors from `@report_opt sbtm(xs, Δts, b, D, s)` in sbtm
 # learning the sin function
 function learn_sin()
   s = Chain(
@@ -159,3 +159,18 @@ custom_train!(s, xs, optimiser = Descent(10^-4), num_steps = 100)
 loss(s, xs)
 plot_s_1d(s,xs)
 
+
+
+# understanding runtimes dispatch in `train!`
+using Flux
+actual(x) = 4x + 2
+x_train, x_test = hcat(0:5...), hcat(6:10...)
+y_train, y_test = actual.(x_train), actual.(x_test)
+predict = Dense(1 => 1)
+loss_(x, y) = Flux.Losses.mse(predict(x), y);
+opt = Descent()
+data = [(x_train, y_train)]
+parameters = Flux.params(predict)
+train!(loss_, parameters, data, opt)
+@report_opt train!(loss_, parameters, data, opt) # ═════ 19 possible errors found ═════ 
+# runtime dispatch detected: isequal(%1::Any, v::Task)::Bool
