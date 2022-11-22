@@ -1,6 +1,9 @@
 # learning Flux
 using Flux
 
+maybewrap(x) = x
+maybewrap(x::T) where {T <: Number} = T[x]
+
 function plot_s_1d(s, xs)
     x_coordinates = minimum(xs) : (maximum(xs) - minimum(xs))/99 : maximum(xs)
     s_values = vcat(s.(eachcol(reshape(x_coordinates, 1, 100)))...)
@@ -68,3 +71,27 @@ function example()
     parameters = Flux.params(predict)
     train!(loss_, parameters, data, opt)
 end
+
+
+
+using Flux: params, train!
+s = Chain(
+  maybewrap,
+  Dense(1 => 50, relu),
+  Dense(50 => 50, relu),
+  Dense(50 => 50, relu),
+  Dense(50 => 50, relu),
+  Dense(50 => 1))
+s_ = deepcopy(s)
+f(x) = sin.(6.28 .* x .+ 3.14)
+x_train = hcat(0.5 : 3/100 : 3.5 ...)
+data = [(x_train, f.(x_train))]
+
+mse_loss(x, y) = Flux.Losses.mse(s(x), y)
+train!(mse_loss, params(s), data, Descent())
+    
+grads = gradient(() -> sum( Flux.Losses.mse(s_(x), y) for (x,y) in zip(data[1]...))/size(x_train, 2), params(s_))
+Flux.update!(Descent(), params(s_), grads)
+
+s(1.0)
+s_(1.0)
