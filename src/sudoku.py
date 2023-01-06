@@ -27,10 +27,13 @@ def make_sets(puzzle):
                 squares[r//3][c//3].add(num)
     return rows, cols, squares
 
+# use priority queue to choose the next cell, with (key, val) = (len(allowed_numbers(cell))), cell)
+
 class Sudoku:
     def __init__(self, puzzle) -> None:
         self.puzzle = np.array(puzzle)
         self.rows, self.cols, self.squares = make_sets(puzzle)
+        # self.empty_cells = set([(r,c) for r in range(9) for c in range(9) if self.puzzle[r,c]==0])
     
     def is_solved(self):
         for r in range(9):
@@ -50,12 +53,14 @@ class Sudoku:
         self.rows[row].add(num)
         self.cols[col].add(num)
         self.squares[row//3][col//3].add(num)
+        # self.empty_cells.remove((row, col))
     
     def remove_number(self, num, row, col):
         self.puzzle[row, col] = 0
         self.rows[row].remove(num)
         self.cols[col].remove(num)
         self.squares[row//3][col//3].remove(num)
+        # self.empty_cells.add((row, col))
 
     def allowed_numbers(self, row, col):
         """return numbers that can go in (row, col) cell"""
@@ -67,32 +72,36 @@ class Sudoku:
                 result.append(num)
         return result
 
-    def exists_valid_move(self):
-        for r in range(9):
-            for c in range(9):
-                if len(self.allowed_numbers(r, c)) > 0:
-                    return True
-        return False
+    def num_allowed_numbers(self, row, col):
+        """return the number of values that can go in (row, col) cell"""
+        if self.puzzle[row, col] != 0:
+            return 0
+        result = 0
+        for num in range(1,9+1):
+            if num not in self.rows[row] and num not in self.cols[col] and num not in self.squares[row//3][col//3]:
+                result += 1
+            # if result > 2:
+            #     break
+        return result
 
     def choose_cell(self):
-        """choose the cell with smallest number of values that can go there, and a boolean that is True if there is a valid move"""
-        best_row, best_col, shortest, longest = 0,0,9,0
+        """choose the cell with smallest number of values that can go there, and a boolean that is True if the puzzle might still be solvable"""
+        best_row, best_col, shortest = 0,0,9
         for row in range(9):
             for col in range(9):
-                allowed_nums = self.allowed_numbers(row, col)
-                num_allowed = len(allowed_nums)
-                if num_allowed == 1:
-                    return (row, col), True
-                if num_allowed > 0 and num_allowed < shortest:
+                if self.puzzle[row, col] != 0:
+                    continue
+                num_allowed = self.num_allowed_numbers(row, col)
+                if num_allowed == 0:
+                    return (row, col), False
+                if num_allowed < shortest:
                     best_row, best_col, shortest = row, col, num_allowed
-                if num_allowed > longest:
-                    longest = num_allowed
-        return (best_row, best_col), (longest > 0)
+        return (best_row, best_col), (shortest != 9)
 
     def solve_recursive(self, solutions, rec_depth):
         """return all possible solutions appended to the solutions array"""
-        indent = (15-rec_depth)*" "
-        if rec_depth<=0:
+        indent = (20-rec_depth)*" "
+        if rec_depth<=0 or len(solutions)==1:
             # print(f"{indent}ran out of recursive depth")
             return
         
@@ -104,31 +113,43 @@ class Sudoku:
                 if len(allowed_nums) == 1:
                     # print(f"{indent}placing {num} at {(best_row,best_col)}")
                     new_depth = rec_depth
-                else:
+                elif len(allowed_nums) == 2:
                     # print(f"{indent}guessing {num} at {(best_row,best_col)}")
                     new_depth = rec_depth-1
+                else:
+                    new_depth = 0
                 self.place_number(num, best_row, best_col)
                 self.solve_recursive(solutions, new_depth)
                 self.remove_number(num, best_row, best_col)
         else:
-            # num_zeros_left = len([self.puzzle[r][c] for r in range(9) for c in range(9) if self.puzzle[r][c]==0])
-            # print(f"{indent}no more valid moves")
             if self.is_solved():
                 print(f"{indent}SOLVED with depth {rec_depth} left")
                 solutions.append(np.copy(self.puzzle))
-            # else:
-                # print(f"{indent}UNSOLVED")
 
 def sudoku_solver(puzzle):
     print(f"Solving sudoku\n{puzzle}")
     assert is_valid(puzzle)
     sudoku = Sudoku(puzzle)
     solutions = []
-    sudoku.solve_recursive(solutions, 16)
+    sudoku.solve_recursive(solutions, 30)
     print(f"solutions:\n{solutions}")
     assert len(solutions) == 1
-    return solutions[0]
+    solution = solutions[0].tolist()
+    return solution
 
-puzzle = [[0, 5, 0, 0, 1, 9, 0, 0, 0], [0, 0, 0, 6, 0, 5, 0, 0, 0], [0, 0, 0, 2, 8, 0, 0, 5, 0], [0, 0, 3, 0, 0, 0, 0, 9, 0], [0, 0, 2, 0, 0, 0, 8, 0, 0], [0, 4, 0, 8, 0, 6, 0, 7, 2], [4, 7, 0, 3, 0, 2, 0, 6, 0], [0, 0, 9, 0, 0, 0, 2, 0, 0], [0, 8, 0, 0, 0, 0, 7, 0, 0]]
+puzzle_ = [
+[5, 0, 0, 0, 0, 0, 3, 0, 0], 
+[0, 6, 0, 8, 0, 2, 0, 4, 0], 
+[0, 0, 1, 0, 0, 0, 0, 0, 5], 
+[0, 1, 0, 3, 2, 0, 0, 7, 0], 
+[0, 0, 2, 0, 0, 4, 0, 0, 0], 
+[3, 0, 4, 0, 7, 0, 6, 0, 9], 
+[8, 0, 7, 0, 1, 0, 5, 0, 4], 
+[0, 0, 0, 5, 0, 0, 7, 0, 0], 
+[0, 5, 0, 0, 0, 7, 0, 3, 0]]
 
-sudoku_solver(puzzle)
+import time
+t1 = time.time()
+sudoku_solver(puzzle_)
+t2 = time.time()
+print(f"Took {t2-t1} seconds")
