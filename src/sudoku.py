@@ -4,15 +4,17 @@ def is_valid(puzzle):
     if len(puzzle) != 9:
         print("Not 9 rows")
         return False
+    num_values_given = 0
     for r in range(9):
         if len(puzzle[r]) != 9:
             print("Not 9 columns")
             return False
         for c in range(9):
+            num_values_given += (puzzle[r][c] != 0)
             if puzzle[r][c] not in range(0,9+1):
                 print(f"Wrong number at {(r,c)}")
                 return False
-    return True
+    return num_values_given > 16
 
 def make_sets(puzzle):
     rows = [set() for _ in range(9)]
