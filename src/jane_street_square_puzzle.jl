@@ -44,8 +44,8 @@ end
 # print("Range $(ranges[1]) x $(ranges[2]) x $(ranges[3]) x $(ranges[4]) \n  longest sequence = $longest\n  values $best_values")
 
 # ranges = [0:10^7, 0:10^7, 0:10^7, 0:0]
-# longest, best_values = random_experiment(ranges, 10^8)
-# print("Range $(ranges[1]) x $(ranges[2]) x $(ranges[3]) x $(ranges[4]) \n  longest sequence = $longest\n  values $best_values")
+# longest, best_values = random_experiment(ranges, 10^7)
+# print("Range $(ranges[1]) x $(ranges[2]) x $(ranges[3]) x $(ranges[4]) \n  longest sequence = $longest\n  values $best_values\n")
 
 function symmetries(y :: T) where T
     f(y) = T([y[1], y[4], y[3], y[2]])
@@ -66,20 +66,25 @@ function remove_symmetries(ys :: AbstractVector{T}) where T
     collect(result)
 end
 
-αs(y) = [α for α in Iterators.product(repeat([[-1,1]], 4)...) if dot(α, y) == 0]
+const possible_αs = collect(Iterators.product(repeat([[-1,1]], 4)...))
 
-function find_prev(y :: T, αs :: AbstractVector{S}, verbose=true) where {T, S}
+αs(y) = filter(α -> dot(α, y) == 0, possible_αs)
+
+function find_prev(y :: T, αs :: AbstractVector{S}, verbose=1) where {T, S}
     possible_prev_xs = T[]
     # possible_prev_βs = S[]
     for β in [S([1, i, j, k]) for i in (-1,1) for j in (-1,1) for k in (-1,1) if (i, j, k)!=(1,1,1)]
         sum_β = sum(β)
         for α in αs
             K = dot(β[2:end], cumsum(α .* y)[1:3])
-            sum_β == 0 && K != 0 && continue
-            if sum_β == 0
+            if sum_β == 0 && K != 0 
+                continue
+            elseif sum_β == 0
                 x1 = 10^7
             elseif K % sum_β == 0 # need x_1 = K_/sum_β to be an integer
-                x1 = Int(-K/sum_β)
+                x1 = -K ÷ sum_β
+            else
+                continue
             end
             x2 = x1 + α[1]y[1]
             x3 = x2 + α[2]y[2]
@@ -94,17 +99,24 @@ function find_prev(y :: T, αs :: AbstractVector{S}, verbose=true) where {T, S}
     end
     possible_prev_xs = remove_symmetries(possible_prev_xs)
     # possible_prev_βs = unique(possible_prev_βs)
-    verbose && println("Have $(length(possible_prev_xs)) solutions:\n $(hcat(possible_prev_xs...)')")
+    verbose>1 && println("Have $(length(possible_prev_xs)) solutions:\n $(hcat(possible_prev_xs...)')")
     possible_prev_xs#, possible_prev_βs
 end
 
-# function find_prev_recursive(y :: T, verbose=true, depth = 2) where {T}
-#     "go up starting from y"
-#     αs_ = αs(y)
-#     possible_prev_xs, possible_prev_βs = find_prev(y, αs_)
-#     for 
-# end
+function find_prev_recursive!(deepest, y, verbose=1, depth = 2)
+    "go up starting from y"
+    verbose>0 && println("$(" "^depth)Depth $depth, y = $y")
+    if depth == 0
+        push!(deepest, y)
+        return
+    end
+    αs_ = αs(y)
+    possible_prev_xs = find_prev(y, αs_,verbose)
+    for x in possible_prev_xs
+        find_prev_recursive!(deepest, x, verbose, depth-1)
+    end
+end
 
 y = 1*ones(Int, 4)
-αs_ = αs(y)
-possible_prev_xs = find_prev(y, αs_)
+deepest = Set{typeof(y)}()
+find_prev_recursive!(deepest, y, 1, 10)
