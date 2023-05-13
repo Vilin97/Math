@@ -3,6 +3,7 @@ isprime(x) = x > 1 && all(x % i != 0 for i in 2:floor(sqrt(x)))
 for b in 1:10^3
     all( !isprime(10b + a) for a in 0:9) && println(b)
 end
+200 # even
 201 # % 3 == 0
 202 # even
 203 # % 7 == 0
