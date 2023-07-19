@@ -82,3 +82,18 @@ p1 = plot(ns, n_probs, ylabel = "prob of open", xlabel = "n", title = "d = 2, p 
 p2 = plot(ds, d_probs, ylabel = "prob of open", xlabel = "d", title = "n = 2, p = 0.6");
 p3 = plot(ps, p_probs, ylabel = "prob of open", xlabel = "p", title = "n = 20, d = 2");
 plot(p1, p2, p3, layout = (3,1), size = (1000, 800))
+
+# timing
+n = 10_000
+d = 2
+p = 0.5
+g = grid(n, d, p)
+is_open(g)
+@time is_open(g) # 0.04 seconds
+
+n = 100
+d = 4
+p = 0.5
+g = grid(n, d, p)
+is_open(g)
+@time is_open(g) # 0.007-0.02 seconds
