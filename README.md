@@ -2,13 +2,13 @@
 Random math scripts
 
 ## Empirical Bayes
-This code implements the discrete Wasserstein gradient flow for the empirical Bayes model \( Y_i = \theta_i + \epsilon_i \), where \( \theta_i \) are uniformly sampled from the perimeter of a circle and \( \epsilon_i \sim N(0, I) \). At each iteration, the particles \( \{x_i^{(t)}\}_{i=1}^m \) are updated by
-\[
-x_i^{(t+1)} = x_i^{(t)} - \frac{1}{n} \sum_{k=1}^n \frac{ \nabla \phi(Y_k - x_i^{(t)}) }{ \frac{1}{m} \sum_{\ell=1}^m \phi(Y_k - x_\ell^{(t)}) },
-\]
-where \(\phi\) is the RBF kernel. The resulting animation visualizes the evolution of these particles as they are transported to match the distribution of the observed data \(\{Y_i\}\).
+Wasserstein gradient flow for the empirical Bayes model: Yᵢ = θᵢ + εᵢ, where θᵢ are points sampled uniformly from the perimeter of a circle and εᵢ are standard normal noise vectors. At each iteration, the particles x₁,…,xₘ are updated according to:
 
-![Empirical Bayes animation](empirical_bayes.gif)
+xᵢ ← xᵢ - (1/n) × Σₖ [ ∇φ(Yₖ - xᵢ) / ( (1/m) × Σₗ φ(Yₖ - xₗ) ) ]
+
+where φ is the RBF kernel and the sums run over all observed data points (k=1…n) and all particles (l=1…m).
+
+<img src="empirical_bayes.gif" alt="Empirical Bayes animation" width="600"/>
 
 ## Throwing eggs from a building
 Given n eggs and an M-floor building, find the minimum number of egg throws to identify the lowest floor at which eggs break.
