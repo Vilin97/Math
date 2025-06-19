@@ -109,6 +109,9 @@ ani = animation.FuncAnimation(
     fig, animate, frames=n_steps+1, interval=100, blit=True, init_func=init
 )
 
+# Save the animation to a file
+ani.save("empirical_bayes.gif", writer="pillow", fps=30)
+
 plt.show()
 
 # %%
